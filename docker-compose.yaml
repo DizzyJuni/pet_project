@@ -1,0 +1,140 @@
+# docker-compose.yml
+services:
+  # 1. База данных
+  postgres:
+    image: postgres:15-alpine
+    container_name: shop-postgres
+    environment:
+      POSTGRES_DB: shop_analytics
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - shop-network
+
+  # 2. Redis
+  redis:
+    image: redis:7.2-alpine
+    container_name: shop-redis
+    command: redis-server --appendonly yes --requirepass redis123
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redis123", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - shop-network
+
+  # 3. Zookeeper (нужен для Kafka)
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: shop-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_SERVER_ID: 1
+    ports:
+      - "2181:2181"
+    networks:
+      - shop-network
+
+  # 4. Kafka
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: shop-kafka
+    depends_on:
+      zookeeper:
+        condition: service_started
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+    ports:
+      - "9092:9092"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - shop-network
+
+  # 5. Kafka UI (опционально, но очень полезно)
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: shop-kafka-ui
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    ports:
+      - "8080:8080"
+    networks:
+      - shop-network
+
+  # 6. Redis Commander (опционально, визуализация Redis)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: shop-redis-commander
+    environment:
+      # Важно: правильный формат для подключения с паролем
+      REDIS_HOSTS: local:redis:6379:0:redis123
+      REDIS_SENTINEL: "false"
+      REDIS_LABELS: "Local"
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - shop-network
+
+  # 7. pgAdmin (опционально, для администрирования PostgreSQL)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: shop-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@shop.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "8082:80"
+    depends_on:
+      - postgres
+    networks:
+      - shop-network
+
+# Сети
+networks:
+  shop-network:
+    driver: bridge
+
+# Тома для сохранения данных
+volumes:
+  postgres_data:
+  redis_data:
+  kafka_data:

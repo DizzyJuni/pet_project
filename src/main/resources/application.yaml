@@ -1,0 +1,80 @@
+# application.yml
+server:
+  port: 8083  # ← ДОБАВЬТЕ ЭТО
+  servlet:
+    context-path: /api  # опционально, но рекомендуется
+
+spring:
+  application:
+    name: shop
+
+  # PostgreSQL конфигурация
+  datasource:
+    url: jdbc:postgresql://localhost:5432/shop_analytics
+    username: admin
+    password: admin123
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+
+  # JPA конфигурация
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+    show-sql: false
+
+  # Redis конфигурация
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: redis123
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 10
+          max-idle: 5
+          min-idle: 2
+          max-wait: 1000ms
+
+  # Kafka конфигурация
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.type.mapping: productEvent:com.shop.event.ProductEvent,orderEvent:com.shop.event.OrderEvent
+    consumer:
+      group-id: shop-analytics-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.shop.event"
+        spring.json.type.mapping: productEvent:com.shop.event.ProductEvent,orderEvent:com.shop.event.OrderEvent
+
+# Логирование Kafka (для отладки)
+logging:
+  level:
+    org.apache.kafka: WARN
+    org.springframework.kafka: INFO
+    com.shop.kafka: DEBUG
+
+# Наши кастомные настройки
+app:
+  kafka:
+    topics:
+      product-events: product-events
+      order-events: order-events
+      user-events: user-events
+    partitions: 3
+    replication-factor: 1
