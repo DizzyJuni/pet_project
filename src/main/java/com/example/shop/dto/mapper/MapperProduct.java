@@ -1,7 +1,7 @@
 package com.example.shop.dto.mapper;
 
 import com.example.shop.domian.Product;
-import com.example.shop.dto.ProductDTO;
+import com.example.shop.dto.product.ProductDTO;
 import org.springframework.stereotype.Component;
 
 @Component

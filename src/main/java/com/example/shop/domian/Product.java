@@ -1,6 +1,7 @@
 package com.example.shop.domian;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -12,7 +13,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "products")
+@Table(name = "productCount")
 @NoArgsConstructor
 @AllArgsConstructor
 @Setter
@@ -38,9 +39,10 @@ public class Product {
 
     @Column(name = "stock_quantity")
     @NotNull
+    @Min(value = 0)
     private Integer stockQuantity;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;
 

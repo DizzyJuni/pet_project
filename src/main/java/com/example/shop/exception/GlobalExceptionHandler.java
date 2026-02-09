@@ -35,4 +35,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(error);
     }
+
+    @ExceptionHandler(CategoryNotFoundException.class)
+    public ResponseEntity<ErrorResponseDTO> handlerCategoryNotFoundException(CategoryNotFoundException e) {
+        log.error("Handler category not found exception: {}", String.valueOf(e));
+        var error = new ErrorResponseDTO("Category not found",
+                e.getMessage(),
+                LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(error);
+    }
 }

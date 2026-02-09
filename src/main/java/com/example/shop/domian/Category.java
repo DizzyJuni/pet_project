@@ -26,7 +26,7 @@ public class Category {
     @NotBlank
     private String name;
 
-    @Column(name = "slug")
+    @Column(unique = true, name = "slug")
     @NotBlank
     private String slug;
 

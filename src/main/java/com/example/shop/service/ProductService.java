@@ -1,17 +1,23 @@
 package com.example.shop.service;
 
 import com.example.shop.domian.Product;
-import com.example.shop.dto.ProductDTO;
-import com.example.shop.dto.ProductUpdateDTO;
+import com.example.shop.dto.product.ProductDTO;
+import com.example.shop.dto.product.ProductUpdateDTO;
 import com.example.shop.dto.mapper.MapperProduct;
 import com.example.shop.exception.ProductNotFoundException;
 import com.example.shop.repository.ProductRepository;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,12 +31,23 @@ public class ProductService {
     private final MapperProduct mapperProduct;
 
     @Transactional(readOnly = true)
-    public List<ProductDTO> getAllProducts() {
-        log.info("Start method getAllProduct.");
-        List<Product> productList = productRepository.findAll();
-        return productList.stream()
-                .map(mapperProduct::toResponse)
-                .toList();
+    public Page<ProductDTO> getAllProducts(Pageable pageable) {
+        Page<Product> productList = productRepository.findAll(pageable);
+        return productList.map(mapperProduct::toResponse);
+    }
+
+    public Page<ProductDTO> searchProductWithPagination(String name, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
+        log.info("Searching productCount - name: {}, minPrice: {}, maxPrice: {}, " +
+                        "with pagination: page {} , size{}",
+                name, minPrice, maxPrice, pageable.getPageNumber(), pageable.getPageSize());
+
+        String searchName = (name == null || name.trim().isEmpty() ? null : name.trim());
+
+        Page<Product> searchProductList = productRepository.findAll(
+                createSearchSpecification(searchName, minPrice, maxPrice), pageable
+        );
+
+        return searchProductList.map(mapperProduct::toResponse);
     }
 
     @Transactional(readOnly = true)
@@ -70,5 +87,29 @@ public class ProductService {
             throw new ProductNotFoundException("Product not found with id: " + id);
         }
         productRepository.deleteById(id);
+    }
+
+    private Specification<Product> createSearchSpecification(
+            String name, BigDecimal minPrice, BigDecimal maxPrice) {
+        return (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (name != null) {
+                predicates.add(criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get("name")),
+                        "%" + name.toLowerCase() + "%"
+                ));
+            }
+            if (minPrice != null) {
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(
+                        root.get("price"), minPrice
+                ));
+            }
+            if (maxPrice != null) {
+                predicates.add(criteriaBuilder.lessThanOrEqualTo(
+                        root.get("price"), maxPrice
+                ));
+            }
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
     }
 }
