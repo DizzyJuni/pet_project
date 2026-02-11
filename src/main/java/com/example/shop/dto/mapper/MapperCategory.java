@@ -8,7 +8,8 @@ import org.springframework.stereotype.Component;
 public class MapperCategory {
 
     public CategoryDTO toResponse(Category categoryRequest) {
-        return new CategoryDTO(categoryRequest.getName(),
+        return new CategoryDTO(categoryRequest.getId(),
+                categoryRequest.getName(),
                 categoryRequest.getSlug(),
                 categoryRequest.getProducts() != null
                         ? (long) categoryRequest.getProducts().size()

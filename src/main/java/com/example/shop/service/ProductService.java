@@ -10,11 +10,16 @@ import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -31,17 +36,22 @@ public class ProductService {
     private final MapperProduct mapperProduct;
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "products",
+            key = "'page:' + #pageable.pageNumber + ':size:' + #pageable.pageSize")
     public Page<ProductDTO> getAllProducts(Pageable pageable) {
+        log.debug("Getting all products, page: {}, size: {}",
+                pageable.getPageNumber(), pageable.getPageSize());
         Page<Product> productList = productRepository.findAll(pageable);
         return productList.map(mapperProduct::toResponse);
     }
 
+    @Transactional(readOnly = true)
     public Page<ProductDTO> searchProductWithPagination(String name, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
-        log.info("Searching productCount - name: {}, minPrice: {}, maxPrice: {}, " +
-                        "with pagination: page {} , size{}",
-                name, minPrice, maxPrice, pageable.getPageNumber(), pageable.getPageSize());
+        log.info("Searching products - name: {}, price: {}-{}, page: {}, size: {}",
+                name, minPrice, maxPrice,
+                pageable.getPageNumber(), pageable.getPageSize());
 
-        String searchName = (name == null || name.trim().isEmpty() ? null : name.trim());
+        String searchName = StringUtils.hasText(name) ? name.trim() : null;
 
         Page<Product> searchProductList = productRepository.findAll(
                 createSearchSpecification(searchName, minPrice, maxPrice), pageable
@@ -51,23 +61,32 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "product", key = "#id")
     public ProductDTO getProductById(UUID id) {
-        log.info("Start method getProductById: {}", id);
+        log.debug("Getting product by id: {}", id);
         var product = productRepository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + id));
         return mapperProduct.toResponse(product);
     }
 
     @Transactional
+    @Caching(
+            put = @CachePut(value = "product", key = "#result.id"),
+            evict = @CacheEvict(value = "products", allEntries = true)
+    )
     public ProductDTO createProduct(Product product) {
-        log.info("Start method createProduct");
+        log.info("Creating product: {}", product.getName());
         var productToSave = productRepository.save(product);
         return mapperProduct.toResponse(productToSave);
     }
 
     @Transactional
+    @Caching(
+            put = @CachePut(value = "product", key = "#result.id"),
+            evict = @CacheEvict(value = "products", allEntries = true)
+    )
     public ProductDTO updateProductById(UUID id, ProductUpdateDTO productUpdateDTO) {
-        log.info("Start method updateProductById: {}", id);
+        log.info("Updating product with id: {}", id);
         var updateProduct = productRepository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + id));
 
@@ -75,13 +94,19 @@ public class ProductService {
         updateProduct.setDescription(productUpdateDTO.description());
         updateProduct.setPrice(productUpdateDTO.price());
         updateProduct.setStockQuantity(productUpdateDTO.stockQuantity());
-
+        productRepository.save(updateProduct);
         return mapperProduct.toResponse(updateProduct);
     }
 
     @Transactional
+    @Caching(
+            evict = {
+                    @CacheEvict(value = "product", key = "#id"),
+                    @CacheEvict(value = "products", allEntries = true)
+            }
+    )
     public void deleteProductById(UUID id) {
-        log.info("Start method deleteProductById: {}", id);
+        log.info("Deleting product with id: {}", id);
 
         if (!productRepository.existsById(id)) {
             throw new ProductNotFoundException("Product not found with id: " + id);

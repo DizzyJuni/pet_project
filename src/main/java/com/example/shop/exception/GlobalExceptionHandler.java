@@ -1,6 +1,5 @@
 package com.example.shop.exception;
 
-import com.example.shop.domian.Product;
 import com.example.shop.dto.ErrorResponseDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
