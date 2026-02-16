@@ -70,6 +70,10 @@ public class ProductService {
         log.debug("Getting product by id: {}", id);
         var product = productRepository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + id));
+
+        ProductEvent event = ProductEvent.viewed(product);
+        productEventProducer.sendProductEvent(event);
+
         return mapperProduct.toResponse(product);
     }
 

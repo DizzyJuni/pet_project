@@ -9,8 +9,6 @@ import lombok.NoArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.UUID;
 
@@ -63,6 +61,21 @@ public class ProductEvent {
                 .eventType(EventType.PRODUCT_DELETED)
                 .productId(product.getId())
                 .productName(product.getName())
+                .timestamp(new Date())
+                .source("/api")
+                .build();
+    }
+
+    public static ProductEvent viewed(Product product) {
+        return ProductEvent.builder()
+                .eventId(UUID.randomUUID())
+                .eventType(EventType.PRODUCT_VIEWED)
+                .productId(product.getId())
+                .productName(product.getName())
+                .price(product.getPrice())
+                .categoryId(product.getCategory() != null
+                        ? product.getCategory().getId()
+                        : null)
                 .timestamp(new Date())
                 .source("/api")
                 .build();

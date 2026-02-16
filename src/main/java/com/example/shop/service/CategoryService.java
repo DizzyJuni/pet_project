@@ -6,7 +6,9 @@ import com.example.shop.dto.category.CategoryRequestDTO;
 import com.example.shop.dto.category.CategoryUpdateDTO;
 import com.example.shop.dto.mapper.MapperCategory;
 import com.example.shop.exception.CategoryNotFoundException;
+import com.example.shop.exception.ProductNotFoundException;
 import com.example.shop.repository.CategoryRepository;
+import com.example.shop.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +28,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class CategoryService {
 
+    private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final Logger log = LoggerFactory.getLogger(CategoryService.class);
     private final MapperCategory mapperCategory;
@@ -92,5 +95,15 @@ public class CategoryService {
         var deleteCategory = categoryRepository.findById(id)
                 .orElseThrow(() -> new CategoryNotFoundException("Category not found"));
         categoryRepository.delete(deleteCategory);
+    }
+
+    public void putProductByIdInCategoryById(UUID categoryId, UUID productId) {
+        var category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new CategoryNotFoundException("Category not found"));
+        var product = productRepository.findById(productId)
+                .orElseThrow(() -> new ProductNotFoundException("Product not found"));
+
+        product.setCategory(category);
+        productRepository.save(product);
     }
 }
