@@ -2,7 +2,11 @@ package com.example.shop.dto.mapper;
 
 import com.example.shop.domian.Product;
 import com.example.shop.dto.product.ProductDTO;
+import com.example.shop.dto.product.ProductRequestDTO;
+import com.example.shop.dto.product.ProductUpdateDTO;
 import org.springframework.stereotype.Component;
+
+import java.time.LocalDateTime;
 
 @Component
 public class MapperProduct {
@@ -13,28 +17,31 @@ public class MapperProduct {
                 productRequest.getDescription(),
                 productRequest.getPrice(),
                 productRequest.getStockQuantity(),
-                productRequest.getCategory().getName() != null
+                productRequest.getCategory() != null
                         ? productRequest.getCategory().getName()
                         : null,
-                productRequest.getCategory().getSlug() != null
+                productRequest.getCategory() != null
                         ? productRequest.getCategory().getSlug()
                         : null
         );
     }
 
-    private Product toEntity(ProductDTO productResponse) {
+    public Product toEntity(ProductRequestDTO productRequestDTO) {
         return Product.builder()
-                .name(productResponse.name())
-                .description(productResponse.description())
-                .price(productResponse.price())
-                .stockQuantity(productResponse.stockQuantity())
+                .name(productRequestDTO.name())
+                .description(productRequestDTO.description())
+                .price(productRequestDTO.price())
+                .stockQuantity(productRequestDTO.stockQuantity())
+                .category(productRequestDTO.category())
+                .createdAt(LocalDateTime.now())
                 .build();
     }
 
-    public void updateEntity(Product product, ProductDTO productDto) {
+    public void updateEntity(Product product, ProductUpdateDTO productDto) {
         product.setName(productDto.name());
         product.setDescription(productDto.description());
         product.setPrice(productDto.price());
         product.setStockQuantity(productDto.stockQuantity());
+        product.setUpdatedAt(LocalDateTime.now());
     }
 }

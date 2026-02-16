@@ -2,6 +2,7 @@ package com.example.shop.service;
 
 import com.example.shop.domian.Category;
 import com.example.shop.dto.category.CategoryDTO;
+import com.example.shop.dto.category.CategoryRequestDTO;
 import com.example.shop.dto.category.CategoryUpdateDTO;
 import com.example.shop.dto.mapper.MapperCategory;
 import com.example.shop.exception.CategoryNotFoundException;
@@ -53,9 +54,12 @@ public class CategoryService {
             put = @CachePut(value = "category", key = "#result.id"),
             evict = @CacheEvict(value = "categories", allEntries = true)
     )
-    public CategoryDTO createCategory(Category category) {
-        log.info("Creating category: {}", category.getName());
-        var savedCategory = categoryRepository.save(category);
+    public CategoryDTO createCategory(CategoryRequestDTO categoryRequestDTO) {
+        log.info("Creating category: {}", categoryRequestDTO.name());
+
+        var savedCategory = mapperCategory.toEntity(categoryRequestDTO);
+        categoryRepository.save(savedCategory);
+
         return mapperCategory.toResponse(savedCategory);
     }
 
@@ -66,11 +70,12 @@ public class CategoryService {
     )
     public CategoryDTO updateCategoryById(UUID id, CategoryUpdateDTO categoryUpdateDTO) {
         log.info("Updating category with id: {}", id);
+
         var updateCategory = categoryRepository.findById(id)
                 .orElseThrow(() -> new CategoryNotFoundException("Category not found"));
-        updateCategory.setName(categoryUpdateDTO.name());
-        updateCategory.setSlug(categoryUpdateDTO.slug());
+        mapperCategory.updateEntity(updateCategory, categoryUpdateDTO);
         categoryRepository.save(updateCategory);
+
         return mapperCategory.toResponse(updateCategory);
     }
 
@@ -83,6 +88,7 @@ public class CategoryService {
     )
     public void deleteCategoryById(UUID id) {
         log.info("Deleting category with id: {}", id);
+
         var deleteCategory = categoryRepository.findById(id)
                 .orElseThrow(() -> new CategoryNotFoundException("Category not found"));
         categoryRepository.delete(deleteCategory);

@@ -22,8 +22,8 @@ public interface ProductRepository extends JpaRepository<Product, UUID>,
 //    Page<Product> searchProductWithPagination(@Param("name") String name,
 //                                              @Param("minPrice") BigDecimal minPrice,
 //                                              @Param("maxPrice") BigDecimal maxPrice);
-
-    Page<Product> findByCategoryById(UUID categoryId, Pageable pageable);
-
-    Page<Product> findByPriceBetween(BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable);
+//
+//    Page<Product> findByCategoryById(UUID categoryId, Pageable pageable);
+//
+//    Page<Product> findByPriceBetween(BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable);
 }

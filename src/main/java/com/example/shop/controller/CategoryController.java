@@ -2,6 +2,7 @@ package com.example.shop.controller;
 
 import com.example.shop.domian.Category;
 import com.example.shop.dto.category.CategoryDTO;
+import com.example.shop.dto.category.CategoryRequestDTO;
 import com.example.shop.dto.category.CategoryUpdateDTO;
 import com.example.shop.service.CategoryService;
 import jakarta.validation.Valid;
@@ -44,7 +45,7 @@ public class CategoryController {
     }
 
     @PostMapping("/category")
-    public ResponseEntity<CategoryDTO> createCategory(@RequestBody @Valid Category category) {
+    public ResponseEntity<CategoryDTO> createCategory(@RequestBody @Valid CategoryRequestDTO category) {
         log.info("POST /shop/category");
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(categoryService.createCategory(category));
