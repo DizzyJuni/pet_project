@@ -1,6 +1,6 @@
-package com.example.shop.event;
+package com.example.shop.event.product;
 
-import com.example.shop.enums.EventType;
+import com.example.shop.enums.ProductEventType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -24,7 +24,7 @@ public class ProductEventConsumer {
     )
     public void handleProductEvent(ProductEvent event) {
         try {
-            switch (event.getEventType()) {
+            switch (event.getProductEventType()) {
                 case PRODUCT_CREATED -> {
                     log.info("New product created: {}", event.getProductName());
                     redisTemplate.opsForValue().increment("stats:total:products");
@@ -46,7 +46,7 @@ public class ProductEventConsumer {
             }
             redisTemplate.opsForValue().set(
                     "event:last:" + event.getEventId(),
-                    event.getEventType().toString(),
+                    event.getProductEventType().toString(),
                     1, TimeUnit.DAYS
             );
         } catch (Exception e) {
@@ -60,7 +60,7 @@ public class ProductEventConsumer {
             groupId = "analytics"
     )
     public void handleProductViewed(ProductEvent event) {
-        if (event.getEventType() == EventType.PRODUCT_VIEWED) {
+        if (event.getProductEventType() == ProductEventType.PRODUCT_VIEWED) {
             log.info("Product {} have been viewed", event.getProductName());
             redisTemplate.opsForZSet().incrementScore("analytics:top:viewed",
                     event.getProductId().toString(), 1);

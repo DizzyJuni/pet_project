@@ -1,4 +1,4 @@
-package com.example.shop.event;
+package com.example.shop.event.product;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,11 +19,11 @@ public class ProductEventProducer {
         kafkaTemplate.send(topic, key, event)
                 .whenComplete((result, ex) -> {
                     if (ex == null) {
-                        log.debug("Sent product event: {} to topic: {}, partition: {}",
-                                event.getEventType(), topic, result.getRecordMetadata()
+                        log.info("Sent product event: {} to topic: {}, partition: {}",
+                                event.getProductEventType(), topic, result.getRecordMetadata()
                                         .partition());
                     } else {
-                        log.error("Failed to send product event: {}", event.getEventType());
+                        log.error("Failed to send product event: {}", event.getProductEventType());
                     }
                 });
     }

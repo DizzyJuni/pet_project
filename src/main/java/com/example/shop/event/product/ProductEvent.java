@@ -1,7 +1,7 @@
-package com.example.shop.event;
+package com.example.shop.event.product;
 
 import com.example.shop.domian.Product;
-import com.example.shop.enums.EventType;
+import com.example.shop.enums.ProductEventType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,7 +20,7 @@ import java.util.UUID;
 public class ProductEvent {
 
     private UUID eventId;
-    private EventType eventType;
+    private ProductEventType productEventType;
     private UUID productId;
     private String productName;
     private BigDecimal price;
@@ -31,7 +31,7 @@ public class ProductEvent {
     public static ProductEvent created(Product product) {
         return ProductEvent.builder()
                 .eventId(UUID.randomUUID())
-                .eventType(EventType.PRODUCT_CREATED)
+                .productEventType(ProductEventType.PRODUCT_CREATED)
                 .productId(product.getId())
                 .productName(product.getName())
                 .price(product.getPrice())
@@ -46,7 +46,7 @@ public class ProductEvent {
     public static ProductEvent updated(Product product) {
         return ProductEvent.builder()
                 .eventId(UUID.randomUUID())
-                .eventType(EventType.PRODUCT_UPDATED)
+                .productEventType(ProductEventType.PRODUCT_UPDATED)
                 .productId(product.getId())
                 .productName(product.getName())
                 .price(product.getPrice())
@@ -58,7 +58,7 @@ public class ProductEvent {
     public static ProductEvent deleted(Product product) {
         return ProductEvent.builder()
                 .eventId(UUID.randomUUID())
-                .eventType(EventType.PRODUCT_DELETED)
+                .productEventType(ProductEventType.PRODUCT_DELETED)
                 .productId(product.getId())
                 .productName(product.getName())
                 .timestamp(new Date())
@@ -69,7 +69,7 @@ public class ProductEvent {
     public static ProductEvent viewed(Product product) {
         return ProductEvent.builder()
                 .eventId(UUID.randomUUID())
-                .eventType(EventType.PRODUCT_VIEWED)
+                .productEventType(ProductEventType.PRODUCT_VIEWED)
                 .productId(product.getId())
                 .productName(product.getName())
                 .price(product.getPrice())
