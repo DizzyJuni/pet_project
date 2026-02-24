@@ -1,7 +1,7 @@
 package com.example.shop.controller;
 
-import com.example.shop.domian.Category;
 import com.example.shop.dto.category.CategoryDTO;
+import com.example.shop.dto.category.CategoryRequestDTO;
 import com.example.shop.dto.category.CategoryUpdateDTO;
 import com.example.shop.service.CategoryService;
 import jakarta.validation.Valid;
@@ -44,7 +44,7 @@ public class CategoryController {
     }
 
     @PostMapping("/category")
-    public ResponseEntity<CategoryDTO> createCategory(@RequestBody @Valid Category category) {
+    public ResponseEntity<CategoryDTO> createCategory(@RequestBody @Valid CategoryRequestDTO category) {
         log.info("POST /shop/category");
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(categoryService.createCategory(category));
@@ -60,8 +60,19 @@ public class CategoryController {
 
     @DeleteMapping("/category/{id}")
     public ResponseEntity<Void> deleteCategoryById(@PathVariable("id") UUID id) {
-        log.info("DELETE shop/category/{}", id);
+        log.info("DELETE /shop/category/{}", id);
         categoryService.deleteCategoryById(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/category/addProductById/categoryId/{categoryId}/productId/{productId}")
+    public ResponseEntity<String> addProductToCategoryById(
+            @PathVariable("categoryId") UUID categoryId,
+            @PathVariable("productId") UUID productId) {
+        log.info("PUT /shop/category/addProductById/categoryId={}&productId={}",
+                categoryId, productId);
+        categoryService.putProductByIdInCategoryById(categoryId, productId);
+        return ResponseEntity.status(HttpStatus.OK)
+                .build();
     }
 }

@@ -1,7 +1,7 @@
 package com.example.shop.controller;
 
-import com.example.shop.domian.Product;
 import com.example.shop.dto.product.ProductDTO;
+import com.example.shop.dto.product.ProductRequestDTO;
 import com.example.shop.dto.product.ProductUpdateDTO;
 import com.example.shop.service.ProductService;
 import jakarta.validation.Valid;
@@ -31,7 +31,7 @@ public class ProductController {
     public ResponseEntity<Page<ProductDTO>> getAllProducts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "createAt") String sortBy,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String direction
     ) {
         log.info("GET /shop/productCount - page: {}, size: {}, sort: {}, direction: {}",
@@ -70,7 +70,7 @@ public class ProductController {
     }
 
     @PostMapping("/productCount")
-    public ResponseEntity<ProductDTO> createProduct(@RequestBody @Valid Product product) {
+    public ResponseEntity<ProductDTO> createProduct(@RequestBody @Valid ProductRequestDTO product) {
         log.info("POST /api/productCount");
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(productService.createProduct(product));

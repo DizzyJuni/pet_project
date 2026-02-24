@@ -2,10 +2,13 @@ package com.example.shop.service;
 
 import com.example.shop.domian.Category;
 import com.example.shop.dto.category.CategoryDTO;
+import com.example.shop.dto.category.CategoryRequestDTO;
 import com.example.shop.dto.category.CategoryUpdateDTO;
 import com.example.shop.dto.mapper.MapperCategory;
 import com.example.shop.exception.CategoryNotFoundException;
+import com.example.shop.exception.ProductNotFoundException;
 import com.example.shop.repository.CategoryRepository;
+import com.example.shop.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +28,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class CategoryService {
 
+    private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final Logger log = LoggerFactory.getLogger(CategoryService.class);
     private final MapperCategory mapperCategory;
@@ -53,9 +57,12 @@ public class CategoryService {
             put = @CachePut(value = "category", key = "#result.id"),
             evict = @CacheEvict(value = "categories", allEntries = true)
     )
-    public CategoryDTO createCategory(Category category) {
-        log.info("Creating category: {}", category.getName());
-        var savedCategory = categoryRepository.save(category);
+    public CategoryDTO createCategory(CategoryRequestDTO categoryRequestDTO) {
+        log.info("Creating category: {}", categoryRequestDTO.name());
+
+        var savedCategory = mapperCategory.toEntity(categoryRequestDTO);
+        categoryRepository.save(savedCategory);
+
         return mapperCategory.toResponse(savedCategory);
     }
 
@@ -66,11 +73,12 @@ public class CategoryService {
     )
     public CategoryDTO updateCategoryById(UUID id, CategoryUpdateDTO categoryUpdateDTO) {
         log.info("Updating category with id: {}", id);
+
         var updateCategory = categoryRepository.findById(id)
                 .orElseThrow(() -> new CategoryNotFoundException("Category not found"));
-        updateCategory.setName(categoryUpdateDTO.name());
-        updateCategory.setSlug(categoryUpdateDTO.slug());
+        mapperCategory.updateEntity(updateCategory, categoryUpdateDTO);
         categoryRepository.save(updateCategory);
+
         return mapperCategory.toResponse(updateCategory);
     }
 
@@ -83,8 +91,19 @@ public class CategoryService {
     )
     public void deleteCategoryById(UUID id) {
         log.info("Deleting category with id: {}", id);
+
         var deleteCategory = categoryRepository.findById(id)
                 .orElseThrow(() -> new CategoryNotFoundException("Category not found"));
         categoryRepository.delete(deleteCategory);
+    }
+
+    public void putProductByIdInCategoryById(UUID categoryId, UUID productId) {
+        var category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new CategoryNotFoundException("Category not found"));
+        var product = productRepository.findById(productId)
+                .orElseThrow(() -> new ProductNotFoundException("Product not found"));
+
+        product.setCategory(category);
+        productRepository.save(product);
     }
 }

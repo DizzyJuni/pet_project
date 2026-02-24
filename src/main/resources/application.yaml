@@ -52,15 +52,19 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:
-        spring.json.type.mapping: productEvent:com.shop.event.ProductEvent,orderEvent:com.shop.event.OrderEvent
+        spring.json.type.mapping: |
+          productEvent:com.example.shop.event.product.ProductEvent,
+          userEvent:com.example.shop.event.user.UserEvent
     consumer:
       group-id: shop-analytics-group
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
-        spring.json.trusted.packages: "com.shop.event"
-        spring.json.type.mapping: productEvent:com.shop.event.ProductEvent,orderEvent:com.shop.event.OrderEvent
+        spring.json.trusted.packages: "com.example.shop.event.*"
+        spring.json.type.mapping: |
+          productEvent:com.example.shop.event.product.ProductEvent,
+          userEvent:com.example.shop.event.user.UserEvent
 
 # Логирование Kafka (для отладки)
 logging:

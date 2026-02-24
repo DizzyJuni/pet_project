@@ -2,8 +2,11 @@ package com.example.shop.service;
 
 import com.example.shop.domian.Product;
 import com.example.shop.dto.product.ProductDTO;
+import com.example.shop.dto.product.ProductRequestDTO;
 import com.example.shop.dto.product.ProductUpdateDTO;
 import com.example.shop.dto.mapper.MapperProduct;
+import com.example.shop.event.product.ProductEvent;
+import com.example.shop.event.product.ProductEventProducer;
 import com.example.shop.exception.ProductNotFoundException;
 import com.example.shop.repository.ProductRepository;
 import jakarta.persistence.criteria.Predicate;
@@ -32,6 +35,7 @@ import java.util.UUID;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final ProductEventProducer productEventProducer;
     private final Logger log = LoggerFactory.getLogger(ProductService.class);
     private final MapperProduct mapperProduct;
 
@@ -66,6 +70,10 @@ public class ProductService {
         log.debug("Getting product by id: {}", id);
         var product = productRepository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + id));
+
+        ProductEvent event = ProductEvent.viewed(product);
+        productEventProducer.sendProductEvent(event);
+
         return mapperProduct.toResponse(product);
     }
 
@@ -74,9 +82,14 @@ public class ProductService {
             put = @CachePut(value = "product", key = "#result.id"),
             evict = @CacheEvict(value = "products", allEntries = true)
     )
-    public ProductDTO createProduct(Product product) {
-        log.info("Creating product: {}", product.getName());
-        var productToSave = productRepository.save(product);
+    public ProductDTO createProduct(ProductRequestDTO productRequestDTO) {
+        log.info("Creating product: {}", productRequestDTO.name());
+        var productToSave = mapperProduct.toEntity(productRequestDTO);
+        productRepository.save(productToSave);
+
+        ProductEvent event = ProductEvent.created(productToSave);
+        productEventProducer.sendProductEvent(event);
+
         return mapperProduct.toResponse(productToSave);
     }
 
@@ -90,11 +103,12 @@ public class ProductService {
         var updateProduct = productRepository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + id));
 
-        updateProduct.setName(productUpdateDTO.name());
-        updateProduct.setDescription(productUpdateDTO.description());
-        updateProduct.setPrice(productUpdateDTO.price());
-        updateProduct.setStockQuantity(productUpdateDTO.stockQuantity());
+        mapperProduct.updateEntity(updateProduct, productUpdateDTO);
         productRepository.save(updateProduct);
+
+        ProductEvent event = ProductEvent.updated(updateProduct);
+        productEventProducer.sendProductEvent(event);
+
         return mapperProduct.toResponse(updateProduct);
     }
 
@@ -108,10 +122,12 @@ public class ProductService {
     public void deleteProductById(UUID id) {
         log.info("Deleting product with id: {}", id);
 
-        if (!productRepository.existsById(id)) {
-            throw new ProductNotFoundException("Product not found with id: " + id);
-        }
-        productRepository.deleteById(id);
+        var deleteProduct = productRepository.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException("Product not found"));
+        productRepository.delete(deleteProduct);
+
+        ProductEvent event = ProductEvent.deleted(deleteProduct);
+        productEventProducer.sendProductEvent(event);
     }
 
     private Specification<Product> createSearchSpecification(
